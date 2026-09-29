@@ -2,13 +2,12 @@ services:
   - type: web
     name: kora-public-api
     runtime: docker
+    plan: free
     dockerfilePath: ./backend/Dockerfile
     dockerContext: ./backend
     healthCheckPath: /health
     envVars:
       - key: DATABASE_URL
-        sync: false
-      - key: DATABASE_URL_UNPOOLED
         sync: false
       - key: GEMINI_API_KEY
         sync: false
