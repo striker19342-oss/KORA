@@ -4,6 +4,17 @@ KORA is an Afrofuturist, bidder-first sealed-bid auction experience for Midnight
 
 Live website: [https://sweet-gumdrop-75cf08.netlify.app/](https://sweet-gumdrop-75cf08.netlify.app/)
 
+## Website Screenshots
+
+### Homepage
+![KORA website homepage](docs/screenshots/website/02-homepage.png)
+
+### Bidder journey
+![KORA bidder journey](docs/screenshots/website/01-bidder-journey.png)
+
+### Bidder console
+![KORA bidder console](docs/screenshots/website/03-bidder-console.png)
+
 ## Mobile responsive ui
 
 Screenshots from the live mobile experience:

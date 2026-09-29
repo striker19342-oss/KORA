@@ -12,6 +12,7 @@ export type WorkerContractDeployment = {
 
 type DeployInput = { network: Network; walletAddress: string; wallet: ConnectedWallet['wallet'] };
 type CompactRuntime = {
+  supportedNetworks?: Network[];
   deployAuctionContract?: (input: DeployInput) => Promise<unknown>;
 };
 
@@ -54,7 +55,10 @@ function saveDeployment(deployment: WorkerContractDeployment): void {
 export async function deployAuctionForWorker(wallet: ConnectedWallet): Promise<WorkerContractDeployment> {
   const runtime = (window as Window & { koraCompact?: CompactRuntime }).koraCompact;
   if (typeof runtime?.deployAuctionContract !== 'function') {
-    throw new Error('The compiled KORA Compact deployment module is not included in this build. Add the generated browser contract binding before deploying.');
+    throw new Error('The KORA Compact browser runtime is not bundled. Add the compiled contract artifacts and deployment adapter to the frontend build; this cannot be fixed with a Netlify or Render environment variable.');
+  }
+  if (runtime.supportedNetworks && !runtime.supportedNetworks.includes(wallet.network)) {
+    throw new Error(`The bundled KORA Compact artifacts do not support ${wallet.network}. Rebuild and bundle artifacts for that network.`);
   }
 
   const result: unknown = await runtime.deployAuctionContract({ network: wallet.network, walletAddress: wallet.address, wallet: wallet.wallet });
