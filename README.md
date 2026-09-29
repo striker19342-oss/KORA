@@ -4,6 +4,19 @@ KORA is an Afrofuturist, bidder-first sealed-bid auction experience for Midnight
 
 Live website: [https://sweet-gumdrop-75cf08.netlify.app/](https://sweet-gumdrop-75cf08.netlify.app/)
 
+## Mobile responsive ui
+
+Screenshots from the live mobile experience:
+
+### Landing page
+![KORA mobile landing page](docs/screenshots/mobile/01-mobile-homepage.jpg)
+
+### Live auction overview
+![KORA mobile live auction overview](docs/screenshots/mobile/02-mobile-live-example.jpg)
+
+### Auction rule
+![KORA mobile auction rule](docs/screenshots/mobile/03-mobile-auction-rule.jpg)
+
 ## Run
 `npm install && npm run dev` • `npm test` • `npm run lint` • `npm run build`
 
