@@ -1,6 +1,8 @@
 from functools import lru_cache
 from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from sqlalchemy.engine import make_url
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file='.env', extra='ignore')
     database_url: str = 'sqlite+aiosqlite:///./kora.db'
@@ -13,7 +15,14 @@ class Settings(BaseSettings):
     @classmethod
     def async_database_driver(cls, value: str | None) -> str | None:
         if not value: return value
-        return value.replace('postgresql://', 'postgresql+asyncpg://', 1).replace('postgres://', 'postgresql+asyncpg://', 1)
+        value = value.replace('postgresql://', 'postgresql+asyncpg://', 1).replace('postgres://', 'postgresql+asyncpg://', 1)
+        url = make_url(value)
+        query = dict(url.query)
+        sslmode = query.pop('sslmode', None)
+        if sslmode is not None:
+            query.setdefault('ssl', sslmode)
+            url = url.set(query=query)
+        return url.render_as_string(hide_password=False)
 
     @property
     def allowed_origins(self) -> list[str]: return [origin.strip().rstrip('/') for origin in self.cors_origins.split(',') if origin.strip()]
