@@ -1,47 +1,29 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ConnectedWallet } from './wallet';
+
+const { submitKoraBid } = vi.hoisted(() => ({ submitKoraBid: vi.fn() }));
+vi.mock('./compactRuntime', () => ({ submitKoraBid }));
+
 import { submitSealedBid } from './circuit';
 
-const wallet = (network: ConnectedWallet['network'] = 'preview') => ({
-  address: 'midnight1bidder',
-  network,
-}) as ConnectedWallet;
+const wallet = { address: 'midnight1bidder', network: 'preview' } as ConnectedWallet;
 
-function setRuntime(runtime: unknown) {
-  Object.defineProperty(window, 'koraCompact', { value: runtime, configurable: true, writable: true });
-}
+describe('Compact circuit submission', () => {
+  beforeEach(() => submitKoraBid.mockReset());
 
-describe('Compact circuit runtime', () => {
-  it('explains that the generated runtime is missing rather than reporting a network mismatch', async () => {
-    setRuntime(undefined);
+  it('submits the selected deployment and private witness through the real adapter', async () => {
+    submitKoraBid.mockResolvedValue({ transactionId: 'midnight-network-tx' });
 
-    const result = await submitSealedBid(wallet(), 'private-commitment');
+    const result = await submitSealedBid(wallet, 'contract-address', '5250', 'ab'.repeat(32));
 
-    expect(result.kind).toBe('unavailable');
-    expect(result.reason).toMatch(/runtime is not bundled/i);
-    expect(result.reason).toMatch(/environment variable/i);
+    expect(submitKoraBid).toHaveBeenCalledWith(wallet, 'contract-address', '5250', 'ab'.repeat(32));
+    expect(result).toEqual({ kind: 'submitted', transactionId: 'midnight-network-tx' });
   });
 
-  it('reports when bundled artifacts do not support the selected network', async () => {
-    setRuntime({ supportedNetworks: ['preprod'], submitSealedBid: vi.fn() });
+  it('never reports submission when the network provides no transaction identifier', async () => {
+    submitKoraBid.mockResolvedValue({ transactionId: '' });
 
-    const result = await submitSealedBid(wallet('preview'), 'private-commitment');
-
-    expect(result.kind).toBe('unavailable');
-    expect(result.reason).toMatch(/do not support preview/i);
-  });
-
-  it('passes the selected network to the generated circuit adapter and returns its real receipt', async () => {
-    const submit = vi.fn().mockResolvedValue({ transactionId: 'network-tx-123' });
-    setRuntime({ supportedNetworks: ['preview'], submitSealedBid: submit });
-
-    const result = await submitSealedBid(wallet('preview'), 'private-commitment');
-
-    expect(submit).toHaveBeenCalledWith({
-      commitment: 'private-commitment',
-      address: 'midnight1bidder',
-      network: 'preview',
-    });
-    expect(result).toEqual({ kind: 'submitted', transactionId: 'network-tx-123' });
+    await expect(submitSealedBid(wallet, 'contract-address', '5250', 'ab'.repeat(32)))
+      .rejects.toThrow(/no transaction identifier/i);
   });
 });

@@ -10,12 +10,6 @@ export type WorkerContractDeployment = {
   deployedAt: string;
 };
 
-type DeployInput = { network: Network; walletAddress: string; wallet: ConnectedWallet['wallet'] };
-type CompactRuntime = {
-  supportedNetworks?: Network[];
-  deployAuctionContract?: (input: DeployInput) => Promise<unknown>;
-};
-
 function safeRead(): WorkerContractDeployment[] {
   try {
     const value: unknown = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '[]');
@@ -53,22 +47,13 @@ function saveDeployment(deployment: WorkerContractDeployment): void {
 }
 
 export async function deployAuctionForWorker(wallet: ConnectedWallet): Promise<WorkerContractDeployment> {
-  const runtime = (window as Window & { koraCompact?: CompactRuntime }).koraCompact;
-  if (typeof runtime?.deployAuctionContract !== 'function') {
-    throw new Error('The KORA Compact browser runtime is not bundled. Add the compiled contract artifacts and deployment adapter to the frontend build; this cannot be fixed with a Netlify or Render environment variable.');
-  }
-  if (runtime.supportedNetworks && !runtime.supportedNetworks.includes(wallet.network)) {
+  if (wallet.network !== 'preview' && wallet.network !== 'preprod') {
     throw new Error(`The bundled KORA Compact artifacts do not support ${wallet.network}. Rebuild and bundle artifacts for that network.`);
   }
-
-  const result: unknown = await runtime.deployAuctionContract({ network: wallet.network, walletAddress: wallet.address, wallet: wallet.wallet });
-  if (!result || typeof result !== 'object') throw new Error('The deployment module returned no on-chain deployment receipt.');
-
-  const receipt = result as Record<string, unknown>;
-  const contractAddress = typeof receipt.contractAddress === 'string' ? receipt.contractAddress.trim() : '';
-  const transactionHash = typeof receipt.transactionHash === 'string'
-    ? receipt.transactionHash.trim()
-    : typeof receipt.txHash === 'string' ? receipt.txHash.trim() : '';
+  const { deployKoraContract } = await import('./compactRuntime');
+  const receipt = await deployKoraContract(wallet);
+  const contractAddress = receipt.contractAddress.trim();
+  const transactionHash = receipt.transactionHash.trim();
   if (!contractAddress || !transactionHash) {
     throw new Error('The deployment module must return the real contractAddress and transactionHash from the network.');
   }

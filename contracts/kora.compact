@@ -1,22 +1,45 @@
-// KORA sealed-bid auction. Generated artifacts are intentionally versioned by the Compact build pipeline.
-// Public state: deadline, reserve commitment, nullifiers, eligible count.
-// Private witness: bidder secret and bid value. `disclose` is used only for the boolean outcome and nullifier.
-pragma language_version >= 0.16;
+// KORA sealed-bid auction. Compile with `compact compile contracts/kora.compact managed/kora`.
+// Public state: deadline, reserve, one-time nullifiers, and eligible count.
+// Private state is supplied through witnesses and is never written to the ledger.
+pragma language_version >= 0.20;
+
+import CompactStandardLibrary;
+
+witness getBidderSecret(): Bytes<32>;
+witness getBidAmount(): Uint<64>;
 
 export ledger auctionDeadline: Uint<64>;
 export ledger reserveFloor: Uint<64>;
 export ledger usedNullifiers: Set<Bytes<32>>;
-export ledger eligibleBids: Uint<64>;
+export ledger eligibleBids: Counter;
 
-export circuit submit_sealed_bid(private bidderSecret: Bytes<32>, private bidAmount: Uint<64>, public bidNullifier: Bytes<32>): [] {
-  assert(bidAmount >= reserveFloor);
-  assert(!usedNullifiers.member(bidNullifier));
-  // Deliberate disclosure: one irreversible nullifier is public solely to prevent a second bid from this witness.
+constructor(initialReserve: Uint<64>, initialDeadline: Uint<64>) {
+  reserveFloor = disclose(initialReserve);
+  auctionDeadline = disclose(initialDeadline);
+}
+
+circuit deriveBidNullifier(secret: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<2, Bytes<32>>>([
+    pad(32, "kora:sealed-bid:nullifier:v1"),
+    secret,
+  ]);
+}
+
+export circuit submit_sealed_bid(): [] {
+  const bidderSecret = getBidderSecret();
+  const bidAmount = getBidAmount();
+  const bidNullifier = deriveBidNullifier(bidderSecret);
+
+  assert(blockTimeLt(disclose(auctionDeadline)), "Auction has closed");
+  assert(bidAmount >= reserveFloor, "Bid is below the reserve");
+  assert(!usedNullifiers.member(disclose(bidNullifier)), "This bidder has already submitted");
+  // Only this one-time nullifier and the eligible-bid count are made public.
   usedNullifiers.insert(disclose(bidNullifier));
   eligibleBids.increment(1);
 }
 
-export circuit verify_eligibility(private bidAmount: Uint<64>): Boolean {
+export circuit verify_eligibility(): Boolean {
+  const bidAmount = getBidAmount();
   // Deliberate disclosure: only a yes/no eligibility fact reaches the public verifier; bidAmount remains private.
   return disclose(bidAmount >= reserveFloor);
 }

@@ -38,7 +38,7 @@ The frontend discovers UUID-keyed providers in `window.midnight`, prefers 1AM, a
 
 The auction console connects through 1AM's DApp Connector v4 on the selected network. Each connected wallet can deploy its own auction from the browser. The app stores the returned contract address and deployment transaction hash in local storage, scoped to the wallet address and network. Deployment records stay in that browser profile and are not synced between devices.
 
-Contract deployment requires generated Compact browser artifacts to be bundled with the frontend and to expose `window.koraCompact.deployAuctionContract({ network, walletAddress, wallet })`. That function must use the generated contract and the connected wallet to deploy on Midnight, then return `{ contractAddress, transactionHash }` from the real deployment receipt. The UI rejects missing or incomplete receipts; it does not generate placeholder addresses or hashes. Until the generated contract binding is built into the frontend, the deploy action reports that setup is incomplete.
+The browser deploys the compiled KORA contract through Midnight.js and the connected 1AM wallet. The generated contract module lives in `managed/kora`; its proving keys and ZKIR are bundled under `public/contract/compiled/kora`. `npm run build` synchronizes those generated files before building, so Netlify does not need WSL or the Compact compiler. To change the contract, compile it in WSL2 with `compact compile contracts/kora.compact managed/kora`, then build and redeploy. The deploy action requests wallet approval and DUST for network fees, then retains the real contract address and deployment transaction hash in that browser profile.
 
 ## Deploy: Netlify frontend + Render API
 
@@ -72,7 +72,7 @@ GEMINI_MODEL=gemini-2.5-flash   # optional; this is the default
 
 `DATABASE_URL` must point to a persistent PostgreSQL database in production; the local SQLite default is only for development. The API creates its initial tables at startup. The Alembic files are not currently wired into the Render image, so `DATABASE_URL_UNPOOLED` is not required for this deployment. Add migration execution before relying on Alembic for future schema changes.
 
-Never put database URLs or Gemini keys in Netlify, the frontend `.env`, or any `VITE_*` variable: Vite bundles `VITE_*` values into public browser code. `VITE_MIDNIGHT_NETWORK`, `MIDNIGHT_CONTRACT_ADDRESS`, and `VITE_KORA_CONTRACT_ADDRESS` are not read by the current app; choose Preview or Preprod in the auction UI instead. The contract deployment still requires generated Compact browser artifacts and `window.koraCompact.deployAuctionContract(...)`, as described above.
+Never put database URLs or Gemini keys in Netlify, the frontend `.env`, or any `VITE_*` variable: Vite bundles `VITE_*` values into public browser code. No Midnight contract address or network environment variable is needed: each worker deploys their own contract after selecting Preview or Preprod and connecting 1AM.
 
 `docker compose up --build` runs the API locally; add `--profile proof` only after replacing the proof-server scaffold with the official network image and generated Compact artifacts.
 

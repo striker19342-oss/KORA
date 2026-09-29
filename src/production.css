@@ -13,5 +13,9 @@
 .deployment-record code{color:#f6f0e3;font-size:10px;overflow-wrap:anywhere;line-height:1.4}
 .deployment-record time{color:#9ba6bc;font-size:9px}
 .copy-deployment{justify-self:start;display:flex;align-items:center;gap:5px;padding:3px 0;color:#5bc8b2;background:transparent;border:0;font-size:10px}
+.bid-amount-field{display:grid;gap:8px;margin:0 0 18px;color:#9ba6bc;font-size:12px}
+.bid-amount-field span{margin-left:auto;color:#f0b85a}
+.bid-amount-field input{width:100%;padding:14px 15px;color:#f6f0e3;background:#0f1628;border:1px solid #52617b;border-radius:10px;font:inherit;font-size:16px}
+.bid-amount-field input:focus-visible{outline:3px solid #5bc8b2;outline-offset:2px}
 @media(max-width:1050px){.app-shell{grid-template-columns:205px minmax(0,1fr)}.insight{display:flex;grid-column:1/-1;border-left:0;border-top:1px solid #26334b;padding:24px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}.privacy-note{grid-column:1/-1}}
 @media(max-width:700px){.insight{display:flex;padding:20px 18px}.deployment-card{width:100%}}

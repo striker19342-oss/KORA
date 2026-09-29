@@ -1,0 +1,8 @@
+{
+  "version": 3,
+  "file": "index.js",
+  "sourceRoot": "../../../",
+  "sources": ["contracts/kora.compact", "compiler/standard-library.compact"],
+  "names": [],
+  "mappings": ";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;EAeA;;;;;;;;;;;;;;;;MAYA,AAAA,iBAWC;;;;;;;;;;;;;;;;;;;;;;OAAA;MAED,AAAA,kBAIC;;;;;;;;;;;;;;;;;;;;;;OAAA;;;;;;;;;;GA1BA;EAHD;;;;;UAAY,gBAAwB;UAAE,iBAAyB;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;IAL/D;;;;;;;;;yEAAwC;IACxC;;;;;;;;;yEAAqC;IACrC;;;;;;;;;;yEAA6C;IAC7C;;;;;;;;;yEAAoC;IAGlC;;;;;;;2HAAwB,gBAAc;;yEAA1B;IACZ;;;;;;;2HAA2B,iBAAe;;yEAA3B;;;;;;;GAChB;ECmQD,AAAA,0CAA2B;mCAClB;;;;;;;;;;;0JAAyB;;;;;;EAtRlC,AAAA,kBAAA;oEAAA;;;EDOA,AAAA,kBAAqC;;0DAArC,eAAqC;;;;;;;;;;;;;;GAAA;EACrC,AAAA,eAAiC;;0DAAjC,YAAiC;;;;;;;;;;;;;;GAAA;EAYjC,AAAA,qBAKC,CAL0B,QAAiB;;mCAGxC,QAAM;GAET;EAED,AAAA,oBAWC;UAVO,cAAgC;UAChC,WAA0B;UAC1B,cAA+C,8BAAb,cAAY;;;wEAExB;;;;;;;;;;;6IAAe;;4BACpC,WAAS;;oDAAI;;;;;;;;;;;yHAAY;;qDACxB;;;;;;;;;;;4KAA+B,cAAY;;;;0HAA7B;;IAEtB;;;;;;;;;;2HAA+B,cAAY;;;;;wEAA7B;UACd,KAAY;IAAZ;;;;;;;;;;6FAAA,KAAY;;;;wEAAA;;GACb;EAED,AAAA,qBAIC;UAHO,WAA0B;WAEhB,WAAS;;mCAAI;;;;;;;;;;;wGAAY;GAC1C;;;;;;;;;;;;;;;;IAlCD;qCAAA;;;;;;;;;;;0GAAwC;KAAA;IACxC;qCAAA;;;;;;;;;;;0GAAqC;KAAA;IACrC;;;;;uCAAA;;;;;;;;;;;;;;;;4GAA6C;;;;;;uCAA7C;;;;;;;;;;;;4GAA6C;;;;;;;;;;;;;;uCAA7C;;;;;;;;;;;;;;;4GAA6C;;;;;;;;;KAAA;IAC7C;qCAAA;;;;;;;;;;;0GAAoC;KAAA;;;;;;;;;;;;"
+}
