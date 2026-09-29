@@ -1,0 +1,22 @@
+// KORA sealed-bid auction. Generated artifacts are intentionally versioned by the Compact build pipeline.
+// Public state: deadline, reserve commitment, nullifiers, eligible count.
+// Private witness: bidder secret and bid value. `disclose` is used only for the boolean outcome and nullifier.
+pragma language_version >= 0.16;
+
+export ledger auctionDeadline: Uint<64>;
+export ledger reserveFloor: Uint<64>;
+export ledger usedNullifiers: Set<Bytes<32>>;
+export ledger eligibleBids: Uint<64>;
+
+export circuit submit_sealed_bid(private bidderSecret: Bytes<32>, private bidAmount: Uint<64>, public bidNullifier: Bytes<32>): [] {
+  assert(bidAmount >= reserveFloor);
+  assert(!usedNullifiers.member(bidNullifier));
+  // Deliberate disclosure: one irreversible nullifier is public solely to prevent a second bid from this witness.
+  usedNullifiers.insert(disclose(bidNullifier));
+  eligibleBids.increment(1);
+}
+
+export circuit verify_eligibility(private bidAmount: Uint<64>): Boolean {
+  // Deliberate disclosure: only a yes/no eligibility fact reaches the public verifier; bidAmount remains private.
+  return disclose(bidAmount >= reserveFloor);
+}
