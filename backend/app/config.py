@@ -15,13 +15,10 @@ class Settings(BaseSettings):
     @classmethod
     def async_database_driver(cls, value: str | None) -> str | None:
         if not value: return value
-        value = value.replace('postgresql://', 'postgresql+asyncpg://', 1).replace('postgres://', 'postgresql+asyncpg://', 1)
+        value = value.replace('postgres://', 'postgresql://', 1)
         url = make_url(value)
-        query = dict(url.query)
-        sslmode = query.pop('sslmode', None)
-        if sslmode is not None:
-            query.setdefault('ssl', sslmode)
-            url = url.set(query=query)
+        if url.drivername in {'postgresql', 'postgresql+asyncpg', 'postgresql+psycopg2'}:
+            url = url.set(drivername='postgresql+psycopg')
         return url.render_as_string(hide_password=False)
 
     @property

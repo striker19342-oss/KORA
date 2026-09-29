@@ -3,23 +3,24 @@ from sqlalchemy.engine import make_url
 from app.config import Settings
 
 
-def test_postgres_sslmode_is_normalized_for_asyncpg():
+def test_libpq_ssl_and_channel_binding_options_are_preserved():
     database_url = Settings.async_database_driver(
-        'postgresql://user:secret@db.example.test/kora?sslmode=require&application_name=kora'
+        'postgresql://user:secret@db.example.test/kora?sslmode=require&channel_binding=require'
     )
 
     parsed = make_url(database_url)
-    assert parsed.drivername == 'postgresql+asyncpg'
-    assert parsed.query == {'ssl': 'require', 'application_name': 'kora'}
+    assert parsed.drivername == 'postgresql+psycopg'
+    assert parsed.query == {'sslmode': 'require', 'channel_binding': 'require'}
 
 
-def test_explicit_asyncpg_ssl_option_takes_precedence():
+def test_existing_asyncpg_url_is_migrated_to_psycopg():
     database_url = Settings.async_database_driver(
-        'postgresql://user:secret@db.example.test/kora?ssl=verify-full&sslmode=require'
+        'postgresql+asyncpg://user:secret@db.example.test/kora?sslmode=require'
     )
 
     parsed = make_url(database_url)
-    assert parsed.query == {'ssl': 'verify-full'}
+    assert parsed.drivername == 'postgresql+psycopg'
+    assert parsed.query == {'sslmode': 'require'}
 
 
 def test_sqlite_database_url_is_unchanged():
