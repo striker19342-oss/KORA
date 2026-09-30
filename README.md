@@ -31,8 +31,9 @@ Screenshots from the live mobile experience:
 ## Preprod
 Deployed Contract Address 57dfb5ed9e7739dc6a…ac3455826334
 Transaction hash 5d7194a60d0a8a0844a53479e78b1d8882bae42c1f15af25eeb38891933c9f42
-## Demo Video Url: 
-## Running CI CD Pipeline: https://drive.google.com/file/d/1yxam0Dyk2yS0ol7Z2V-v0oClbCmoZXTJ/view?usp=sharing
+## Demo Video Url: https://drive.google.com/file/d/1yxam0Dyk2yS0ol7Z2V-v0oClbCmoZXTJ/view?usp=sharing
+## Running CI CD Pipeline: 
+<img width="1917" height="976" alt="image" src="https://github.com/user-attachments/assets/b41a4a18-37ab-46b1-ac8e-5a696f797a2d" />
 
 
 `npm install && npm run dev` • `npm test` • `npm run lint` • `npm run build`
