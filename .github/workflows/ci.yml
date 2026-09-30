@@ -1,17 +1,28 @@
 name: CI
-on: [push, pull_request]
-permissions: {contents: read}
-concurrency: {group: kora-${{ github.ref }}, cancel-in-progress: true}
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: 'kora-${{ github.ref }}'
+  cancel-in-progress: true
+
 jobs:
   verify:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: {node-version: 22, cache: npm}
+        with:
+          node-version: 22
+          cache: npm
       - run: npm ci
       - run: npm run lint && npm test && npm run build
       - uses: actions/setup-python@v5
-        with: {python-version: '3.11'}
+        with:
+          python-version: '3.11'
       - run: pip install -r backend/requirements.txt && PYTHONPATH=backend pytest backend/tests
       - run: test -f contracts/kora.compact
