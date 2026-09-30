@@ -2,7 +2,7 @@ import { copyFileSync, existsSync, mkdirSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const sourceRoot = resolve('managed/kora');
-const publicRoot = resolve('public/contract/compiled/kora');
+const publicRoot = resolve('public/contract-artifacts/kora');
 
 for (const artifactDirectory of ['keys', 'zkir']) {
   const source = resolve(sourceRoot, artifactDirectory);
@@ -19,4 +19,4 @@ for (const artifactDirectory of ['keys', 'zkir']) {
   }
 }
 
-console.log('Synced Compact keys and ZKIR into public/contract/compiled/kora.');
+console.log('Synced Compact keys and ZKIR into public/contract-artifacts/kora.');

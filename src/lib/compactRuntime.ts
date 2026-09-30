@@ -17,7 +17,11 @@ const PRIVATE_STATE_ID = 'koraPrivateState';
 const CONTRACT_NAME = 'kora';
 const RESERVE = 5_000n;
 const DURATION_SECONDS = 4 * 60 * 60;
-const ARTIFACTS_URL = new URL('/contract/compiled/kora', window.location.origin).toString();
+function artifactBaseUrl(): string {
+  const configured = import.meta.env.VITE_MIDNIGHT_ARTIFACT_BASE_URL || '/contract-artifacts';
+  const root = configured.replace(/\/$/, '');
+  return new URL(`${root}/kora/`, window.location.origin).toString();
+}
 
 const witnesses: Witnesses<KoraPrivateState> = {
   getBidderSecret: ({ privateState }) => [privateState, privateState.bidderSecret],
@@ -29,7 +33,7 @@ const compiledContract = CompiledContract.withCompiledFileAssets(
     CompiledContract.make(CONTRACT_NAME, GeneratedContract as never),
     witnesses as never,
   ) as never,
-  ARTIFACTS_URL as never,
+  artifactBaseUrl() as never,
 );
 
 const privateStateProviders = new Map<string, ReturnType<typeof levelPrivateStateProvider>>();
@@ -88,7 +92,9 @@ async function createProviders(wallet: ConnectedWallet) {
   // wallet's delegated prover. Contract execution also asks for verifier keys
   // using `contract#circuit` locations; passing the raw Fetch provider here
   // makes its safe filename check reject the `#` before it reaches the assets.
-  const zkConfigProvider = new WalletZkConfigProvider(new FetchZkConfigProvider(ARTIFACTS_URL));
+  const zkConfigProvider = new WalletZkConfigProvider(
+    new FetchZkConfigProvider(artifactBaseUrl(), window.fetch.bind(window)),
+  );
   const proofProvider = await dappConnectorProofProvider(
     wallet.wallet,
     zkConfigProvider,
