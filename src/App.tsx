@@ -5,7 +5,7 @@ import { submitSealedBid } from './lib/circuit';
 import { deployAuctionForWorker, loadWorkerDeployments, type WorkerContractDeployment } from './lib/deployment';
 import { PolicyLens } from './PolicyLens';
 import { loadPrivateBid, rotatePrivateBid, sealPrivateBid, type PrivateBid } from './lib/privateState';
-import { connectPreferredWallet, type ConnectedWallet, type Network as AuctionNetwork, messageForWalletError } from './lib/wallet';
+import { connectPreferredWallet, validateWalletSession, type ConnectedWallet, type Network as AuctionNetwork, messageForWalletError } from './lib/wallet';
 import { Marketing } from './Marketing';
 
 type Stage = 1 | 2 | 3 | 4;
@@ -24,11 +24,37 @@ function AuctionConsole() {
   const [busy, setBusy] = useState(false); const [error, setError] = useState(''); const [tx, setTx] = useState<string | null>(null); const [notice, setNotice] = useState(''); const [deployments, setDeployments] = useState<WorkerContractDeployment[]>([]);
   useEffect(() => setBid(loadPrivateBid()), []);
   useEffect(() => setDeployments(wallet ? loadWorkerDeployments(network, wallet.address) : []), [wallet, network]);
+  useEffect(() => {
+    if (!wallet) return;
+    let active = true;
+    let checking = false;
+    const check = async () => {
+      if (!active || checking || document.visibilityState === 'hidden') return;
+      checking = true;
+      try { await validateWalletSession(wallet); }
+      catch (cause) {
+        if (active) {
+          setWallet(null);
+          setDeployments([]);
+          setError(messageForWalletError(cause));
+          setNotice('');
+        }
+      } finally { checking = false; }
+    };
+    const timer = window.setInterval(() => void check(), 5_000);
+    window.addEventListener('focus', check);
+    return () => { active = false; window.clearInterval(timer); window.removeEventListener('focus', check); };
+  }, [wallet]);
   async function seal(amount: string) { setError(''); setBusy(true); try { const next = await sealPrivateBid(amount); setBid(next); setStage(3); setNotice('The bid amount and witness are kept in this tab; only the eligibility proof and one-time nullifier are submitted.'); } catch (cause) { setError(messageForWalletError(cause)); } finally { setBusy(false); } }
   async function rotateBid(amount: string) { setError(''); setBusy(true); try { const next = await rotatePrivateBid(amount); setBid(next); setNotice('Replaced the private bid witness in this tab. The earlier value was overwritten.'); } catch (cause) { setError(messageForWalletError(cause)); } finally { setBusy(false); } }
   async function connect() { setError(''); setBusy(true); try { setWallet(await connectPreferredWallet(network)); setNotice('Wallet connected for this session only.'); } catch (cause) { setError(messageForWalletError(cause)); } finally { setBusy(false); } }
-  async function submit() { if (!wallet || !bid) return; const deployment = deployments[0]; if (!deployment) { setError('Deploy your worker auction contract first.'); return; } setError(''); setBusy(true); try { const result = await submitSealedBid(wallet, deployment.contractAddress, bid.bidAmount, bid.bidderSecret); setTx(result.transactionId); setNotice('Submitted to the selected Midnight network. Awaiting ledger finalization.'); } catch (cause) { setError(messageForWalletError(cause)); } finally { setBusy(false); } }
-  async function deployContract() { if (!wallet) return; setError(''); setBusy(true); try { const deployment = await deployAuctionForWorker(wallet); setDeployments(loadWorkerDeployments(network, wallet.address)); setNotice(`Auction contract deployed: ${short(deployment.contractAddress)} · ${short(deployment.transactionHash)}.`); } catch (cause) { setError(messageForWalletError(cause)); } finally { setBusy(false); } }
+  function reportWalletFailure(cause: unknown) {
+    const message = messageForWalletError(cause);
+    setError(message);
+    if (/connection was lost|switched to|account changed/i.test(message)) { setWallet(null); setDeployments([]); }
+  }
+  async function submit() { if (!wallet || !bid) return; const deployment = deployments[0]; if (!deployment) { setError('Deploy your worker auction contract first.'); return; } setError(''); setBusy(true); try { await validateWalletSession(wallet); const result = await submitSealedBid(wallet, deployment.contractAddress, bid.bidAmount, bid.bidderSecret); setTx(result.transactionId); setNotice('Submitted to the selected Midnight network. Awaiting ledger finalization.'); } catch (cause) { reportWalletFailure(cause); } finally { setBusy(false); } }
+  async function deployContract() { if (!wallet) return; setError(''); setBusy(true); try { await validateWalletSession(wallet); const deployment = await deployAuctionForWorker(wallet); setDeployments(loadWorkerDeployments(network, wallet.address)); setNotice(`Auction contract deployed: ${short(deployment.contractAddress)} · ${short(deployment.transactionHash)}.`); } catch (cause) { reportWalletFailure(cause); } finally { setBusy(false); } }
   function switchNetwork(next: AuctionNetwork) { setNetwork(next); setWallet(null); setTx(null); setDeployments([]); setNotice(`Switched to ${next}; the wallet session was reset.`); }
   const show = { initial: reduce ? false : { opacity: 0, y: 10 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.24 } };
   return <main className="app-shell">
@@ -36,7 +62,7 @@ function AuctionConsole() {
       <div className="auction-pill"><span className="pulse"/>Sankofa 01<ChevronDown size={15}/></div>
       <nav>{steps.map((label, index) => <button key={label} className={stage === index + 1 ? 'nav-step current' : 'nav-step'} onClick={() => setStage((index + 1) as Stage)}><b>0{index + 1}</b>{label}</button>)}</nav>
       <div className="side-bottom"><label className="select-label">Network</label><div className="network-toggle"><button className={network === 'preview' ? 'selected' : ''} onClick={() => switchNetwork('preview')}>Preview</button><button className={network === 'preprod' ? 'selected' : ''} onClick={() => switchNetwork('preprod')}>Preprod</button></div>
-      {wallet ? <button className="wallet connected" onClick={() => { setWallet(null); setNotice('Wallet disconnected. Local bid remains sealed on this device.'); }}><WalletCards size={17}/><span>{short(wallet.address)}</span><small>Disconnect</small></button> : <button className="wallet" onClick={connect} disabled={busy}><WalletCards size={17}/>{busy ? 'Connecting…' : 'Connect 1AM'}</button>}</div>
+      {wallet ? <button className="wallet connected" onClick={() => { setWallet(null); setNotice('KORA forgot this wallet session. To revoke site access, use 1AM wallet settings.'); }}><WalletCards size={17}/><span>{short(wallet.address)}</span><small>Forget</small></button> : <button className="wallet" onClick={connect} disabled={busy}><WalletCards size={17}/>{busy ? 'Connecting…' : 'Connect 1AM'}</button>}</div>
     </aside>
     <section className="workspace"><header><div><p className="eyebrow">Sealed-bid auction</p><h1>Sankofa <em>01</em></h1></div><div className="close"><span>Closes in</span><strong>03:18:42</strong><span className="ledger"><Radio size={13}/> ledger open</span></div></header>
       <div className="stage-progress">{steps.map((label, index) => <button key={label} className={stage >= index + 1 ? 'done' : ''} onClick={() => setStage((index + 1) as Stage)}><i>{stage > index + 1 ? <Check size={12}/> : index + 1}</i><span>{label}</span></button>)}</div>
