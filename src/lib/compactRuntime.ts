@@ -7,9 +7,10 @@ import { setNetworkId } from '@midnight-ntwrk/midnight-js-network-id';
 import { CompiledContract } from '@midnight-ntwrk/midnight-js-protocol/compact-js';
 import { CostModel, Transaction } from '@midnight-ntwrk/midnight-js-protocol/ledger';
 import { fromHex, toHex, validatePassword } from '@midnight-ntwrk/midnight-js-utils';
-import type { MidnightProviders } from '@midnight-ntwrk/midnight-js-types';
+import { ZKConfigProvider, type MidnightProviders } from '@midnight-ntwrk/midnight-js-types';
 import { Contract as GeneratedContract, type Witnesses } from '../../managed/kora/contract/index.js';
 import type { ConnectedWallet, Network } from './wallet';
+import { circuitIdFromKeyLocation } from './zkArtifactLocation';
 
 type KoraPrivateState = { bidAmount: bigint; bidderSecret: Uint8Array };
 const PRIVATE_STATE_ID = 'koraPrivateState';
@@ -30,6 +31,25 @@ const compiledContract = CompiledContract.withCompiledFileAssets(
   ) as never,
   ARTIFACTS_URL as never,
 );
+
+/** The wallet API may qualify a key location as `contract#circuit`; HTTP artifacts use the Compact circuit filename alone. */
+class WalletZkConfigProvider extends ZKConfigProvider<string> {
+  constructor(private readonly source: FetchZkConfigProvider<string>) {
+    super();
+  }
+
+  getProverKey(keyLocation: string) {
+    return this.source.getProverKey(circuitIdFromKeyLocation(keyLocation));
+  }
+
+  getVerifierKey(keyLocation: string) {
+    return this.source.getVerifierKey(circuitIdFromKeyLocation(keyLocation));
+  }
+
+  getZKIR(keyLocation: string) {
+    return this.source.getZKIR(circuitIdFromKeyLocation(keyLocation));
+  }
+}
 
 const privateStateProviders = new Map<string, ReturnType<typeof levelPrivateStateProvider>>();
 
@@ -86,7 +106,7 @@ async function createProviders(wallet: ConnectedWallet) {
   const zkConfigProvider = new FetchZkConfigProvider(ARTIFACTS_URL);
   const proofProvider = await dappConnectorProofProvider(
     wallet.wallet,
-    zkConfigProvider,
+    new WalletZkConfigProvider(zkConfigProvider),
     CostModel.initialCostModel(),
   );
   const publicDataProvider = indexerPublicDataProvider(
